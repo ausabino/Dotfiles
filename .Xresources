@@ -18,19 +18,20 @@
 #define base0E #a31db1
 #define base0F #b03060
 
-Xterm*font:		-*-fixed-medium-r-*-*-*-*-*-*-*-*-iso8859-*
-XTerm*renderFont:	true
-XTerm*faceName:		VeraMono
-XTerm*faceSize:		12
-XTerm*internalBorder:	3
-XTerm*loginShell:	true
-XTerm*scrollBar:	true
-XTerm*scrollKey:	true
-XTerm*saveLines:	1000
-XTerm*multiClickTime:	250
-XTerm*metaSendsEscape:	true
-XTerm*selectToClipboard:true
-Xterm*scrollTtyOutput:	false
+Xterm*font:               -*-fixed-medium-r-*-*-*-*-*-*-*-*-iso8859-*
+XTerm*renderFont:         true
+XTerm*faceName:           VeraMono
+XTerm*faceSize:           12
+XTerm*internalBorder:	    3
+XTerm*loginShell:   	    true
+XTerm*scrollBar:          true
+XTerm*scrollKey:          true
+XTerm*saveLines:          1000
+XTerm*multiClickTime:	    250
+XTerm*metaSendsEscape:    true
+XTerm*selectToClipboard:  true
+Xterm*scrollTtyOutput:    false
+XTerm*termName:           xterm-256color
 
 *.foreground:   base05
 #ifdef background_opacity
@@ -38,7 +39,7 @@ Xterm*scrollTtyOutput:	false
 #else
 *.background:   base00
 #endif
-*.cursorColor:  Purple4
+*.cursorColor:  base05
 
 *.color0:       base00
 *.color1:       base08
