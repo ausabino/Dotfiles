@@ -135,6 +135,10 @@ flymd.md
 *.cb2
 .*.lb
 
+## Latexdiff
+diff*
+old*
+
 ## Intermediate documents:
 *.dvi
 *.xdv
