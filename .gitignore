@@ -138,6 +138,12 @@ flycheck_*.el
 flymd.html
 flymd.md
 
+# etags
+GPATH/
+GRTAGS/
+GTAGS/
+TAGS/
+
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:
 *.aux
