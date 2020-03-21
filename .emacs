@@ -1,9 +1,13 @@
-;;
-;; Initialize package management
-;;
+;;; initfile --- Summary:
+;;; Commentary:
+;; Emacs 26.3 and newer tested
+;;; Code:
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Set packages to install
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (require 'package)
-;;(add-to-list 'package-archives '("melpa" . "https://melpa.milkbox.net/packages/") t)
-;;(add-to-list 'package-archives '("melpa-stable" . "https://stable.melpa.org/packages/"))
 
 (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/") t)
 (add-to-list 'package-archives '("melpa" . "https://melpa.org/packages/") t)
@@ -23,7 +27,7 @@
  '(inhibit-startup-screen t)
  '(package-selected-packages
    (quote
-    (markdown-mode grip-mode ess-view ggtags ess flycheck spacemacs-theme company-jedi))))
+    (clang-format which-key fill-column-indicator company auctex use-package py-autopep8 origami autopair flycheck-pyflakes markdown-mode grip-mode flycheck spacemacs-theme company-jedi))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -31,6 +35,9 @@
  ;; Your init file should contain only one such instance.
  ;; If there is more than one, they won't work right.
  )
+
+(eval-and-compile
+  (setq use-package-verbose (not (bound-and-true-p byte-compile-current-file))))
 
 ;;
 ;; Make sure all packages are installed
@@ -55,139 +62,218 @@
     (package-refresh-contents))
 
 (ensure-package-installed
+ 'use-package
  'auctex
  'company
  'company-jedi
- 'ess
  'fill-column-indicator
  'flycheck
- 'ggtags
  'reftex
  'markdown-mode
  'grip-mode
  'spacemacs-theme
  )
 
-;;
-;; Custom commands
-;;
+;; Setup use-package
+(eval-when-compile
+  (require 'use-package))
+(use-package bind-key
+  :ensure t)
+;; so we can (require 'use-package) even in compiled emacs to e.g. read docs
+(use-package use-package
+  :commands use-package-autoload-keymap)
 
-;; Copy line
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; By default Emacs triggers garbage collection at ~0.8MB which makes
+;; startup really slow. Since most systems have at least 64MB of memory,
+;; we increase it during initialization.
+(setq gc-cons-threshold 64000000)
+(add-hook 'after-init-hook #'(lambda ()
+                               ;; restore after startup
+                               (setq gc-cons-threshold 800000)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; General Tweaks
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
+;; turn on highlight matching brackets when cursor is on one
+(show-paren-mode t)
+
+;; Overwrite region selected
+(delete-selection-mode t)
+
+;; Show column numbers by default
+(setq column-number-mode t)
+
+;; Prevent emacs from creating a bckup file filename~
+(setq make-backup-files nil)
+
+;; Highlight the line we are currently on
+(global-hl-line-mode t)
+
+;; Auto-wrap at 80 characters
+(setq-default auto-fill-function 'do-auto-fill)
+(setq-default fill-column 80)
+(turn-on-auto-fill)
+;; Disable auto-fill-mode in programming mode
+(add-hook 'prog-mode-hook (lambda () (auto-fill-mode -1)))
+
+;; Always end a file with a newline
+(setq require-final-newline nil)
+
+;; make tab key do indent first then completion.
+(setq-default tab-always-indent 'complete)
+
+;; Global Keyboard Shortcuts
+;; Easy undo key
+(global-set-key (kbd "C-/") 'undo)
+
+;; We don't want to type yes and no all the time so, do y and n
+(defalias 'yes-or-no-p 'y-or-n-p)
+
+;; Disable the menu bar since we don't use it, especially not in the
+;; terminal
+(when (and (not (eq system-type 'darwin)) (fboundp 'menu-bar-mode))
+  (menu-bar-mode -1))
+
+;; Don't ring the bell
+(setq ring-bell-function 'ignore)
+
+;; Highlight some keywords in prog-mode
+(add-hook 'prog-mode-hook
+          (lambda ()
+            ;; Highlighting in cmake-mode this way interferes with
+            ;; cmake-font-lock, which is something I don't yet understand.
+            (when (not (derived-mode-p 'cmake-mode))
+              (font-lock-add-keywords
+               nil
+               '(("\\<\\(FIXME\\|TODO\\|BUG\\|DONE\\)"
+                  1 font-lock-warning-face t))))
+            )
+          )
+
+;; Copy current line
 (defun copy-line (arg)
   "Copy lines (as many as prefix argument) in the kill ring"
   (interactive "p")
   (kill-ring-save (line-beginning-position)
                   (line-beginning-position (+ 1 arg)))
   (message "%d line%s copied" arg (if (= 1 arg) "" "s")))
-
 (global-set-key "\C-c\C-k" 'copy-line)
 
-;; Duplicate line
+;; Duplicate current line
 (global-set-key "\C-c\C-y" "\C-a\C- \C-n\M-w\C-y")
 
-;;
-;; Autocomplete
-;;
-(add-hook 'after-init-hook 'global-company-mode)
-(add-hook 'after-init-hook 'global-flycheck-mode)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Origami - Does code folding, ie hide the body of an
+;; if/else/for/function so that you can fit more code on your screen
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package origami
+  :ensure t
+  :commands (origami-mode)
+  :bind (:map origami-mode-map
+              ("C-c o :" . origami-recursively-toggle-node)
+              ("C-c o a" . origami-toggle-all-nodes)
+              ("C-c o t" . origami-toggle-node)
+              ("C-c o o" . origami-show-only-node)
+              ("C-c o u" . origami-undo)
+              ("C-c o U" . origami-redo)
+              ("C-c o C-r" . origami-reset)
+              )
+  :config
+  (setq origami-show-fold-header t)
+  ;; The python parser currently doesn't fold if/for/etc. blocks, which is
+  ;; something we want. However, the basic indentation parser does support
+  ;; this with one caveat: you must toggle the node when your cursor is on
+  ;; the line of the if/for/etc. statement you want to collapse. You cannot
+  ;; fold the statement by toggling in the body of the if/for/etc.
+  (add-to-list 'origami-parser-alist '(python-mode . origami-indent-parser))
+  :init
+  (add-hook 'prog-mode-hook 'origami-mode)
+  )
 
-(setq flycheck-display-errors-function #'flycheck-display-error-messages-unless-error-list)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; which-key: when you pause on a keyboard shortcut it provides
+;;            suggestions in a popup buffer
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package which-key
+  :ensure t
+  :init
+  (eval-when-compile
+    ;; Silence missing function warnings
+    (declare-function which-key-mode "which-key.el"))
+  :config
+  (which-key-mode))
 
-;;
-;; etags
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; autopair: Automatically at closing brace, bracket and quote
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package autopair
+  :ensure t
+  :init
+  (eval-when-compile
+    ;; Silence missing function warnings
+    (declare-function autopair-global-mode "autopair.el"))
+  :config
+  (autopair-global-mode t)
+  )
 
-(defun create-tags (dir-name)
-  "Create tags file."
-  (interactive "DDirectory: ")
-  (eshell-command
-   (format "find %s -type f -name \"*.[chCH]\" -or -name \"*.py\" | xargs etags --append" dir-name)))
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Use markdown-mode for markdown files
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package markdown-mode
+  :ensure t
+  :mode (".md" ".markdown"))
 
-(defadvice find-tag (around refresh-etags activate)
-  "Rerun etags and reload tags if tag not found and redo find-tag.
-   If buffer is modified, ask about save before running etags."
-  (let ((extension (file-name-extension (buffer-file-name))))
-    (condition-case err
-        ad-do-it
-      (error (and (buffer-modified-p)
-                  (not (ding))
-                  (y-or-n-p "Buffer is modified, save it? ")
-                  (save-buffer))
-             (er-refresh-etags extension)
-             ad-do-it))))
-
-(defun er-refresh-etags (&optional extension)
-  "Run etags on all peer files in current dir and reload them silently."
-  (interactive)
-  (shell-command (format "etags *.%s" (or extension "el")))
-  (let ((tags-revert-without-query t))  ; don't query, revert silently
-    (visit-tags-table default-directory nil)))
-
-
-;;
-;; LaTeX stuff
-;;
-(load "auctex.el" nil t t)
-
-(add-hook 'TeX-mode-hook 'linum-mode)
-(add-hook 'TeX-mode-hook 'hl-line-mode)
-(add-hook 'TeX-mode-hook 'flyspell-mode)
-
-;;
-;; Markdown
-;;
+;; Open a live markdown in browser
 (add-hook 'markdown-mode-hook #'grip-mode)
 (add-hook 'markdown-mode-hook 'flyspell-mode)
+
+;; Enable highlight in LaTeX math
 (setq markdown-enable-math t)
 
-;;
-;; Python
-;;
-(defun company-jedi-setup ()
-  (add-to-list 'company-backends 'company-jedi))
-(add-hook 'python-mode-hook 'company-jedi-setup)
-
-(setq jedi:setup-keys t)
-(setq jedi:complete-on-dot t)
-(add-hook 'python-mode-hook 'jedi:setup)
-
-;;
-;; C++/C stuff
-;;
-(add-hook 'c-mode-common-hook
-          (lambda ()
-            (when (and (derived-mode-p 'c-mode 'c++-mode 'java-mode) (require 'ggtags nil 'noerror))
-              (ggtags-mode 1))))
-(setq-default c-electric-flag nil)
-(defun make-CR-do-indent ()
-  (define-key c-mode-base-map "\C-m" 'c-context-line-break))
-(add-hook 'c-initialization-hook 'make-CR-do-indent)
-(add-hook 'c-mode-common-hook
-          (lambda () (subword-mode 1)))
-(load "/usr/share/emacs/site-lisp/clang-format-6.0/clang-format.el")
-(global-set-key [C-M-tab] 'clang-format-region)
-
-
-;;
-;; Tab
-;;
-
-(progn
-  ;; make indentation commands use space only (never tab character)
-  (setq-default indent-tabs-mode nil)
-  ;; if indent-tabs-mode is t, it means it may use tab, resulting mixed space and tab
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; auctex
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package tex-site
+  :ensure auctex
+  :mode ("\\.tex\\'" . latex-mode)
+  ;; When we byte-compile we need to have the autoloads loaded in order to
+  ;; properly get auctex working, otherwise auctex is not loaded correctly
+  :init
+  (load "auctex-autoloads" nil t)
+  :config
+  (setq-default TeX-auto-save t
+                TeX-parse-self t
+                TeX-source-correlate-start-server t)
+  (cond
+   ((string-equal system-type "windows-nt") ; Microsoft Windows
+    (progn
+      (message "Windows does not have a PDF viewer set for auctex")))
+   ((string-equal system-type "darwin") ; Mac OS X
+    (setq-default
+     TeX-view-program-list
+     '(("Skim"
+        "/Applications/Skim.app/Contents/SharedSupport/displayline -b -g %n %o %b")
+       )
+     TeX-view-program-selection '((output-pdf "Skim"))))
+   ((string-equal system-type "gnu/linux") ; linux
+    (setq-default TeX-view-program-list
+                  '(("Evince" "evince --page-index=%(outpage) %o"))
+                  TeX-view-program-selection '((output-pdf "Evince")))))
+  (add-hook 'LaTeX-mode-hook 'TeX-source-correlate-mode)
+  (add-hook 'LaTeX-mode-hook 'auto-fill-mode)
+  (add-hook 'LaTeX-mode-hook 'flyspell-mode)
+  (add-hook 'LaTeX-mode-hook 'flyspell-buffer)
+  (add-hook 'LaTeX-mode-hook 'turn-on-reftex)
+  (add-hook 'TeX-mode-hook 'linum-mode)
+  (add-hook 'TeX-mode-hook 'hl-line-mode)
+  (setq-default reftex-plug-into-AUCTeX t)
   )
-(setq-default tab-width 2)
-(setq sh-basic-offset 2)
-(setq c-basic-offset 2)
-(setq python-indent-offset 4)
 
-;; make tab key do indent first then completion.
-(setq-default tab-always-indent 'complete)
-
-;;
-;; Fill-Column-Indicator
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Fill-Column-Indicator: draw a line on the limit number
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (setq fci-rule-column 79)
 (setq fci-rule-width 1)
 
@@ -210,15 +296,38 @@
 (add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
 (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
 
-;;
-;; Visual
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; etags: Create tag tables thrown emacs functions
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(defun create-tags (dir-name)
+  "Create tags file."
+  (interactive "DDirectory: ")
+  (eshell-command
+   (format "find %s -type f -name \"*.[ch]\" -or -name \"*.py\" -or -name \"*.cc\" | xargs etags --append" dir-name)))
 
-;; show cursor position within line
-(column-number-mode 1)
-;; Always end a file with a newline
-(setq require-final-newline nil)
+(defadvice find-tag (around refresh-etags activate)
+  "Rerun etags and reload tags if tag not found and redo find-tag.
+   If buffer is modified, ask about save before running etags."
+  (let ((extension (file-name-extension (buffer-file-name))))
+    (condition-case err
+        ad-do-it
+      (error (and (buffer-modified-p)
+                  (not (ding))
+                  (y-or-n-p "Buffer is modified, save it? ")
+                  (save-buffer))
+             (er-refresh-etags extension)
+             ad-do-it))))
 
+(defun er-refresh-etags (&optional extension)
+  "Run etags on all peer files in current dir and reload them silently."
+  (interactive)
+  (shell-command (format "etags *.%s" (or extension "el")))
+  (let ((tags-revert-without-query t))  ; don't query, revert silently
+    (visit-tags-table default-directory nil)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Clean whitespace
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun xah-clean-whitespace ()
   "Delete trailing whitespace, and replace repeated blank lines to just 1.
 Only space and tab is considered whitespace here.
@@ -250,36 +359,26 @@ Version 2017-09-22"
 
 (add-hook 'before-save-hook 'xah-clean-whitespace)
 
-;; if (aspell installed) { use aspell}
-;; else if (hunspell installed) { use hunspell }
-;; whatever spell checker I use, I always use English dictionary
-;; I prefer use aspell because:
-;; 1. aspell is older
-;; 2. looks Kevin Atkinson still get some road map for aspell:
-;; @see http://lists.gnu.org/archive/html/aspell-announce/2011-09/msg00000.html
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Aspell/Huspell configure dictionary
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+
 (defun flyspell-detect-ispell-args (&optional run-together)
   "if RUN-TOGETHER is true, spell check the CamelCase words."
   (let (args)
     (cond
      ((string-match  "aspell$" ispell-program-name)
-      ;; Force the English dictionary for aspell
-      ;; Support Camel Case spelling check (tested with aspell 0.6)
       (setq args (list "--sug-mode=ultra" "--lang=pt_BR"))
       (if run-together
           (setq args (append args '("--run-together"))))
-      ;;((string-match "hunspell$" ispell-program-name)
-      ;; Force the English dictionary for hunspell
-      ;;(setq args "-d pt_BR"))
       )
      args)))
-
 (cond
  ((executable-find "aspell")
   ;; you may also need `ispell-extra-args'
   (setq ispell-program-name "aspell"))
  ((executable-find "hunspell")
   (setq ispell-program-name "hunspell")
-
   ;; Please note that `ispell-local-dictionary` itself will be passed to hunspell cli with "-d"
   ;; it's also used as the key to lookup ispell-local-dictionary-alist
   ;; if we use different dictionary
@@ -287,13 +386,11 @@ Version 2017-09-22"
   (setq ispell-local-dictionary-alist
         '(("pt_BR" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "pt_BR") nil utf-8))))
  (t (setq ispell-program-name nil)))
-
-;; ispell-cmd-args is useless, it's the list of *extra* arguments we will append to the ispell process when "ispell-word" is called.
-;; ispell-extra-args is the command arguments which will *always* be used when start ispell process
 ;; Please note when you use hunspell, ispell-extra-args will NOT be used.
 ;; Hack ispell-local-dictionary-alist instead.
 (setq-default ispell-extra-args (flyspell-detect-ispell-args t))
 ;; (setq ispell-cmd-args (flyspell-detect-ispell-args))
+
 (defadvice ispell-word (around my-ispell-word activate)
   (let ((old-ispell-extra-args ispell-extra-args))
     (ispell-kill-ispell t)
@@ -316,3 +413,107 @@ Version 2017-09-22"
   ;; Turn off RUN-TOGETHER option when spell check text-mode
   (setq-local ispell-extra-args (flyspell-detect-ispell-args)))
 (add-hook 'text-mode-hook 'text-mode-hook-setup)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Python mode settings
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(setq-default python-indent 4)
+(setq-default python-indent-offset 4)
+(add-hook 'python-mode-hook
+          (lambda ()
+            (setq tab-width 4)))
+
+(use-package py-autopep8
+  :ensure t
+  :after python)
+
+;; Format files to PEP8 convention style
+(add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Clang-format
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; clang-format can be triggered using C-c C-f
+(load "/usr/share/emacs/site-lisp/clang-format-6.0/clang-format.el")
+(use-package clang-format
+  :ensure t
+  :bind (("C-c C-f" . clang-format-region))
+  )
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; C++ keys
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Change tab key behavior to insert spaces instead
+(setq-default indent-tabs-mode nil)
+
+;; Set the number of spaces that the tab key inserts (usually 2 or 4)
+(setq c-basic-offset 2)
+;; Set the size that a tab CHARACTER is interpreted as
+;; (unnecessary if there are no tab characters in the file!)
+(setq tab-width 2)
+
+;; Enable hide/show of code blocks
+(add-hook 'c-mode-common-hook 'hs-minor-mode)
+
+(add-hook 'c-mode-common-hook
+           (lambda () (subword-mode 1)))
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Set up code completion with company
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+ (use-package company
+  :ensure t
+  :config
+  ;; Zero delay when pressing tab
+  (setq company-idle-delay 0)
+  (add-hook 'after-init-hook 'global-company-mode)
+  ;; remove unused backends
+  (setq company-backends (delete 'company-semantic company-backends))
+  (setq company-backends (delete 'company-eclim company-backends))
+  (setq company-backends (delete 'company-xcode company-backends))
+  (setq company-backends (delete 'company-clang company-backends))
+  (setq company-backends (delete 'company-bbdb company-backends))
+  (setq company-backends (delete 'company-oddmuse company-backends))
+  )
+
+;; Setup loading company-jedi for python completion
+;; This requines running jedi:install-server the first time
+(use-package company-jedi
+  :ensure t
+  :after python
+  :init
+  (defun company-jedi-setup ()
+    (add-to-list 'company-backends 'company-jedi))
+  (add-hook 'python-mode-hook 'company-jedi-setup)
+  )
+
+(setq jedi:setup-keys t)
+(setq jedi:complete-on-dot t)
+(add-hook 'python-mode-hook 'jedi:setup)
+
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; Configure flycheck
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(use-package flycheck
+  :ensure t
+  :defer t
+  :init
+  (eval-when-compile
+    ;; Silence missing function warnings
+    (declare-function global-flycheck-mode "flycheck.el"))
+  :config
+  ;; Turn flycheck on everywhere
+  (global-flycheck-mode t)
+  (when (not (display-graphic-p))
+    (setq flycheck-indication-mode nil))
+  )
+(use-package flycheck-pyflakes
+  :ensure t
+  :after python)
+
+(setq flycheck-display-errors-function #'flycheck-display-error-messages-unless-error-list)
+
+;; (add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode)
+;; (use-package flycheck-color-mode-line)
+;; (eval-after-load "flycheck"
+;;   '(add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode))
