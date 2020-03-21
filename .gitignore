@@ -139,10 +139,10 @@ flymd.html
 flymd.md
 
 # etags
-GPATH/
-GRTAGS/
-GTAGS/
-TAGS/
+**/GPATH
+**/GRTAGS
+**/GTAGS
+**/TAGS
 
 ### LaTeX ###
 ## Core latex/pdflatex auxiliary files:
