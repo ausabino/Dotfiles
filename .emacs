@@ -456,7 +456,7 @@ Version 2017-09-22"
 (add-hook 'c-mode-common-hook 'hs-minor-mode)
 
 (add-hook 'c-mode-common-hook
-           (lambda () (subword-mode 1)))
+          (lambda () (subword-mode 1)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set up code completion with company
@@ -468,10 +468,8 @@ Version 2017-09-22"
   (setq company-idle-delay 0)
   (add-hook 'after-init-hook 'global-company-mode)
   ;; remove unused backends
-  (setq company-backends (delete 'company-semantic company-backends))
   (setq company-backends (delete 'company-eclim company-backends))
   (setq company-backends (delete 'company-xcode company-backends))
-  (setq company-backends (delete 'company-clang company-backends))
   (setq company-backends (delete 'company-bbdb company-backends))
   (setq company-backends (delete 'company-oddmuse company-backends))
   )
@@ -501,12 +499,13 @@ Version 2017-09-22"
   (eval-when-compile
     ;; Silence missing function warnings
     (declare-function global-flycheck-mode "flycheck.el"))
-  :config
   ;; Turn flycheck on everywhere
-  (global-flycheck-mode t)
+  (global-flycheck-mode)
+  :config
   (when (not (display-graphic-p))
     (setq flycheck-indication-mode nil))
   )
+
 (use-package flycheck-pyflakes
   :ensure t
   :after python)
