@@ -3,6 +3,13 @@
 ;; Emacs 26.3 and newer tested
 ;;; Code:
 
+;; (C) Copyright Alan Sabino 2020.      (alan.sabino at usp dot br)
+;; (C) Copyright Nils Deppe  2018-2020. (nilsdeppe at gmail dot com)
+;;
+;; Distributed under the Boost Software License, Version 1.0.
+;;    (See accompanying file LICENSE_1_0.txt or copy at
+;;          https://www.boost.org/LICENSE_1_0.txt)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set packages to install
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
@@ -39,9 +46,9 @@
 (eval-and-compile
   (setq use-package-verbose (not (bound-and-true-p byte-compile-current-file))))
 
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Make sure all packages are installed
-;;
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (defun ensure-package-installed (&rest packages)
   "Assure every package is installed, ask for installation if it’s not.
      Return a list of installed packages or nil for every skipped package."
