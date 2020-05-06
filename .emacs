@@ -171,7 +171,7 @@
 ;; Duplicate current line
 (global-set-key "\C-c\C-y" "\C-a\C- \C-n\M-w\C-y")
 
-;; Move lines
+;; Move current line
 (defun move-line (n)
   "Move the current line up or down by N lines."
   (interactive "p")
@@ -197,6 +197,9 @@
 
 (global-set-key (kbd "M-<up>") 'move-line-up)
 (global-set-key (kbd "M-<down>") 'move-line-down)
+
+;; Select all
+ (global-set-key "\C-c\C-a" 'mark-whole-buffer)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Origami - Does code folding, ie hide the body of an
