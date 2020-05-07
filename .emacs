@@ -13,7 +13,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set packages to install
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 (require 'package)
 
 (add-to-list 'package-archives '("gnu" . "https://elpa.gnu.org/packages/") t)
@@ -34,7 +33,7 @@
  '(inhibit-startup-screen t)
  '(package-selected-packages
    (quote
-    (clang-format which-key fill-column-indicator company auctex use-package py-autopep8 origami autopair flycheck-pyflakes markdown-mode grip-mode flycheck spacemacs-theme company-jedi))))
+    (buffer-move clang-format which-key fill-column-indicator company auctex use-package py-autopep8 origami autopair flycheck-pyflakes markdown-mode grip-mode flycheck spacemacs-theme company-jedi))))
 
 (custom-set-faces
  ;; custom-set-faces was added by Custom.
@@ -78,6 +77,7 @@
  'reftex
  'markdown-mode
  'grip-mode
+ 'buffer-move
  'spacemacs-theme
  )
 
@@ -102,7 +102,6 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General Tweaks
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-
 ;; turn on highlight matching brackets when cursor is on one
 (show-paren-mode t)
 
@@ -146,6 +145,12 @@
 ;; Don't ring the bell
 (setq ring-bell-function 'ignore)
 
+;; Select all
+ (global-set-key "\C-c\C-a" 'mark-whole-buffer)
+
+;; Duplicate current line
+(global-set-key "\C-c\C-y" "\C-a\C- \C-n\M-w\C-y")
+
 ;; Highlight some keywords in prog-mode
 (add-hook 'prog-mode-hook
           (lambda ()
@@ -167,9 +172,6 @@
                   (line-beginning-position (+ 1 arg)))
   (message "%d line%s copied" arg (if (= 1 arg) "" "s")))
 (global-set-key "\C-c\C-k" 'copy-line)
-
-;; Duplicate current line
-(global-set-key "\C-c\C-y" "\C-a\C- \C-n\M-w\C-y")
 
 ;; Move current line
 (defun move-line (n)
@@ -198,8 +200,14 @@
 (global-set-key (kbd "M-<up>") 'move-line-up)
 (global-set-key (kbd "M-<down>") 'move-line-down)
 
-;; Select all
- (global-set-key "\C-c\C-a" 'mark-whole-buffer)
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+;; buffer-move: Swap buffers without typing C-x b on each window
+;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
+(global-set-key (kbd "<C-S-up>")     'buf-move-up)
+(global-set-key (kbd "<C-S-down>")   'buf-move-down)
+(global-set-key (kbd "<C-S-left>")   'buf-move-left)
+(global-set-key (kbd "<C-S-right>")  'buf-move-right)
+(setq buffer-move-stay-after-swap t)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Origami - Does code folding, ie hide the body of an
@@ -548,8 +556,3 @@ Version 2017-09-22"
   :after python)
 
 (setq flycheck-display-errors-function #'flycheck-display-error-messages-unless-error-list)
-
-;; (add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode)
-;; (use-package flycheck-color-mode-line)
-;; (eval-after-load "flycheck"
-;;   '(add-hook 'flycheck-mode-hook 'flycheck-color-mode-line-mode))
