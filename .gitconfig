@@ -1,0 +1,5 @@
+[user]
+	email = alan.utsuni.sabino@gmail.com
+	name = Alan Sabino
+[core]
+	editor = emacs -nw
