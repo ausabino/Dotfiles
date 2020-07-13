@@ -3,3 +3,4 @@
 	name = Alan Sabino
 [core]
 	editor = emacs -nw
+	excludefile = ./dotfiles/.gitignore
