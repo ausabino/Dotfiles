@@ -57,10 +57,10 @@
 ;; By default Emacs triggers garbage collection at ~0.8MB which makes
 ;; startup really slow. Since most systems have at least 64MB of memory,
 ;; we increase it during initialization.
-(setq gc-cons-threshold 64000000)
-(add-hook 'after-init-hook #'(lambda ()
-                               ;; restore after startup
-                               (setq gc-cons-threshold 800000)))
+;; (setq gc-cons-threshold 64000000)
+;; (add-hook 'after-init-hook #'(lambda ()
+;;                                ;; restore after startup
+;;                                (setq gc-cons-threshold 800000)))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; General Tweaks
@@ -332,7 +332,7 @@ Version 2017-09-22"
 ;; Clang-format
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; clang-format can be triggered using C-c C-f
-(load "/usr/share/emacs/site-lisp/clang-format-6.0/clang-format.el")
+(load "/usr/share/emacs/site-lisp/clang-format-10/clang-format.el")
 (use-package clang-format
   ;; :ensure t
   :bind (("C-c C-f" . clang-format-region))
@@ -379,7 +379,7 @@ Version 2017-09-22"
   ;; :ensure t
   :after python)
 ;; Format files to PEP8 convention style
-(add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
+;; (add-hook 'python-mode-hook 'py-autopep8-enable-on-save)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; C++ keys

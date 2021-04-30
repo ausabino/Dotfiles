@@ -1,0 +1,17 @@
+BasedOnStyle : Google
+---
+Language : Cpp
+AlignAfterOpenBracket: Align
+AlignConsecutiveAssignments : true
+AlignEscapedNewlines: Left
+AlignTrailingComments: true
+BreakBeforeBinaryOperators: None
+BreakBeforeBraces: GNU
+ColumnLimit: 79
+Cpp11BracedListStyle: true
+IncludeBlocks: Regroup
+PointerAlignment: Right
+SpaceBeforeAssignmentOperators : true
+SpaceBeforeParens: Always
+---
+Language : Java
