@@ -75,17 +75,17 @@
 ;; (setq column-number-mode t)
 
 ;; Prevent emacs from creating a bckup file filename~
-(setq make-backup-files nil)
+;; (setq make-backup-files nil)
 
 ;; Highlight the line we are currently on
 (global-hl-line-mode t)
 
 ;; Auto-wrap at 80 characters
-(setq-default auto-fill-function 'do-auto-fill)
-(setq-default fill-column 80)
-(turn-on-auto-fill)
-;; Disable auto-fill-mode in programming mode
-(add-hook 'prog-mode-hook (lambda () (auto-fill-mode -1)))
+;; (setq-default auto-fill-function 'do-auto-fill)
+;; (setq-default fill-column 80)
+;; (turn-on-auto-fill)
+;; ;; Disable auto-fill-mode in programming mode
+;; (add-hook 'prog-mode-hook (lambda () (auto-fill-mode -1)))
 
 ;; Always end a file with a newline
 (setq require-final-newline nil)
@@ -114,14 +114,14 @@
 ;; ;; Duplicate current line
 ;; (global-set-key "\C-c\C-y" "\C-a\C- \C-n\M-w\C-y")
 
-;; Copy current line
-(defun copy-line (arg)
-  "Copy lines (as many as prefix argument) in the kill ring"
-  (interactive "p")
-  (kill-ring-save (line-beginning-position)
-                  (line-beginning-position (+ 1 arg)))
-  (message "%d line%s copied" arg (if (= 1 arg) "" "s")))
-(global-set-key "\C-c\C-k" 'copy-line)
+;; ;; Copy current line
+;; (defun copy-line (arg)
+;;   "Copy lines (as many as prefix argument) in the kill ring"
+;;   (interactive "p")
+;;   (kill-ring-save (line-beginning-position)
+;;                   (line-beginning-position (+ 1 arg)))
+;;   (message "%d line%s copied" arg (if (= 1 arg) "" "s")))
+;; (global-set-key "\C-c\C-k" 'copy-line)
 
 ;; Move current line
 (defun move-line (n)
@@ -150,18 +150,21 @@
 (global-set-key (kbd "M-<up>") 'move-line-up)
 (global-set-key (kbd "M-<down>") 'move-line-down)
 
+;;disable splash screen and startup message
+(setq inhibit-startup-screen t)
+
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; which-key: when you pause on a keyboard shortcut it provides
 ;;            suggestions in a popup buffer
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-;; (use-package which-key
-;;   ;; :ensure t
-;;   :init
-;;   (eval-when-compile
-;;     ;; Silence missing function warnings
-;;     (declare-function which-key-mode "which-key.el"))
-;;   :config
-;;   (which-key-mode))
+(use-package which-key
+  ;; :ensure t
+  :init
+  (eval-when-compile
+    ;; Silence missing function warnings
+    (declare-function which-key-mode "which-key.el"))
+  :config
+  (which-key-mode))
 
 ;; ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; ;; autopair: Automatically at closing brace, bracket and quote
@@ -183,7 +186,7 @@
   "Create tags file."
   (interactive "DDirectory: ")
   (eshell-command
-   (format "find %s -type f -name \"*.[ch]\" -or -name \"*.py\" -or -name \"*.cc\" | xargs etags --append" dir-name)))
+   (format "find %s -type f -name \"*.[chcpp]\" -or -name \"*.py\" -or -name \"*.cc\" -or -name \"*.cpp\"| xargs etags --append" dir-name)))
 
 (defadvice find-tag (around refresh-etags activate)
   "Rerun etags and reload tags if tag not found and redo find-tag.
@@ -210,19 +213,25 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (setq fci-rule-column 79)
 (setq fci-rule-width 1)
-(define-globalized-minor-mode global-fci-mode fci-mode
-  (lambda () (fci-mode 1)))
-(global-fci-mode 1)
-(defvar-local company-fci-mode-on-p nil)
-(defun company-turn-off-fci (&rest ignore)
-  (when (boundp 'fci-mode)
-    (setq company-fci-mode-on-p fci-mode)
-    (when fci-mode (fci-mode -1))))
-(defun company-maybe-turn-on-fci (&rest ignore)
-  (when company-fci-mode-on-p (fci-mode 1)))
-(add-hook 'company-completion-started-hook 'company-turn-off-fci)
-(add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
-(add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
+
+(add-hook 'prog-mode-hook (lambda ()
+  (display-fill-column-indicator-mode)))
+
+;; (setq-default display-fill-column-indicator-column 79)
+
+;; (define-globalized-minor-mode global-fci-mode fci-mode
+;;   (lambda () (fci-mode 1)))
+;; (global-fci-mode 1)
+;; (defvar-local company-fci-mode-on-p nil)
+;; (defun company-turn-off-fci (&rest ignore)
+;;   (when (boundp 'fci-mode)
+;;     (setq company-fci-mode-on-p fci-mode)
+;;     (when fci-mode (fci-mode -1))))
+;; (defun company-maybe-turn-on-fci (&rest ignore)
+;;   (when company-fci-mode-on-p (fci-mode 1)))
+;; (add-hook 'company-completion-started-hook 'company-turn-off-fci)
+;; (add-hook 'company-completion-finished-hook 'company-maybe-turn-on-fci)
+;; (add-hook 'company-completion-cancelled-hook 'company-maybe-turn-on-fci)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Clean whitespace
@@ -261,78 +270,78 @@ Version 2017-09-22"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Aspell/Huspell configure dictionary
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(defun flyspell-detect-ispell-args (&optional run-together)
-  "if RUN-TOGETHER is true, spell check the CamelCase words."
-  (let (args)
-    (cond
-     ((string-match  "aspell$" ispell-program-name)
-      (setq args (list "--sug-mode=ultra" "--lang=pt_BR"))
-      (if run-together
-          (setq args (append args '("--run-together"))))
-      )
-     args)))
-(cond
- ((executable-find "aspell")
-  ;; you may also need `ispell-extra-args'
-  (setq ispell-program-name "aspell"))
- ((executable-find "hunspell")
-  (setq ispell-program-name "hunspell")
-  ;; Please note that `ispell-local-dictionary` itself will be passed to hunspell cli with "-d"
-  ;; it's also used as the key to lookup ispell-local-dictionary-alist
-  ;; if we use different dictionary
-  (setq ispell-local-dictionary "pt_BR")
-  (setq ispell-local-dictionary-alist
-        '(("pt_BR" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "pt_BR") nil utf-8))))
- (t (setq ispell-program-name nil)))
-;; Please note when you use hunspell, ispell-extra-args will NOT be used.
-;; Hack ispell-local-dictionary-alist instead.
-(setq-default ispell-extra-args (flyspell-detect-ispell-args t))
-;; (setq ispell-cmd-args (flyspell-detect-ispell-args))
-(defadvice ispell-word (around my-ispell-word activate)
-  (let ((old-ispell-extra-args ispell-extra-args))
-    (ispell-kill-ispell t)
-    (setq ispell-extra-args (flyspell-detect-ispell-args))
-    ad-do-it
-    (setq ispell-extra-args old-ispell-extra-args)
-    (ispell-kill-ispell t)))
-(defadvice flyspell-auto-correct-word (around my-flyspell-auto-correct-word activate)
-  (let ((old-ispell-extra-args ispell-extra-args))
-    (ispell-kill-ispell t)
-    ;; use emacs original arguments
-    (setq ispell-extra-args (flyspell-detect-ispell-args))
-    ad-do-it
-    ;; restore our own ispell arguments
-    (setq ispell-extra-args old-ispell-extra-args)
-    (ispell-kill-ispell t)))
-(defun text-mode-hook-setup ()
-  ;; Turn off RUN-TOGETHER option when spell check text-mode
-  (setq-local ispell-extra-args (flyspell-detect-ispell-args)))
-(add-hook 'text-mode-hook 'text-mode-hook-setup)
-(defun my-save-word ()
-  (interactive)
-  (let ((current-location (point))
-         (word (flyspell-get-word)))
-    (when (consp word)
-      (flyspell-do-correct 'save nil (car word)
-      current-location (cadr word) (caddr word)
-      current-location))))
-(global-set-key (kbd "C-4") 'my-save-word)
-(let ((langs '("english" "pt_BR")))
-  (setq lang-ring (make-ring (length langs)))
-  (dolist (elem langs) (ring-insert lang-ring elem)))
-(defun cycle-ispell-languages ()
-  (interactive)
-  (let ((lang (ring-ref lang-ring -1)))
-    (ring-insert lang-ring lang)
-    (ispell-change-dictionary lang)
-    (flyspell-buffer)))
-(global-set-key (kbd "C-1") 'cycle-ispell-languages)
+;; (defun flyspell-detect-ispell-args (&optional run-together)
+;;   "if RUN-TOGETHER is true, spell check the CamelCase words."
+;;   (let (args)
+;;     (cond
+;;      ((string-match  "aspell$" ispell-program-name)
+;;       (setq args (list "--sug-mode=ultra" "--lang=pt_BR"))
+;;       (if run-together
+;;           (setq args (append args '("--run-together"))))
+;;       )
+;;      args)))
+;; (cond
+;;  ((executable-find "aspell")
+;;   ;; you may also need `ispell-extra-args'
+;;   (setq ispell-program-name "aspell"))
+;;  ((executable-find "hunspell")
+;;   (setq ispell-program-name "hunspell")
+;;   ;; Please note that `ispell-local-dictionary` itself will be passed to hunspell cli with "-d"
+;;   ;; it's also used as the key to lookup ispell-local-dictionary-alist
+;;   ;; if we use different dictionary
+;;   (setq ispell-local-dictionary "pt_BR")
+;;   (setq ispell-local-dictionary-alist
+;;         '(("pt_BR" "[[:alpha:]]" "[^[:alpha:]]" "[']" nil ("-d" "pt_BR") nil utf-8))))
+;;  (t (setq ispell-program-name nil)))
+;; ;; Please note when you use hunspell, ispell-extra-args will NOT be used.
+;; ;; Hack ispell-local-dictionary-alist instead.
+;; (setq-default ispell-extra-args (flyspell-detect-ispell-args t))
+;; ;; (setq ispell-cmd-args (flyspell-detect-ispell-args))
+;; (defadvice ispell-word (around my-ispell-word activate)
+;;   (let ((old-ispell-extra-args ispell-extra-args))
+;;     (ispell-kill-ispell t)
+;;     (setq ispell-extra-args (flyspell-detect-ispell-args))
+;;     ad-do-it
+;;     (setq ispell-extra-args old-ispell-extra-args)
+;;     (ispell-kill-ispell t)))
+;; (defadvice flyspell-auto-correct-word (around my-flyspell-auto-correct-word activate)
+;;   (let ((old-ispell-extra-args ispell-extra-args))
+;;     (ispell-kill-ispell t)
+;;     ;; use emacs original arguments
+;;     (setq ispell-extra-args (flyspell-detect-ispell-args))
+;;     ad-do-it
+;;     ;; restore our own ispell arguments
+;;     (setq ispell-extra-args old-ispell-extra-args)
+;;     (ispell-kill-ispell t)))
+;; (defun text-mode-hook-setup ()
+;;   ;; Turn off RUN-TOGETHER option when spell check text-mode
+;;   (setq-local ispell-extra-args (flyspell-detect-ispell-args)))
+;; (add-hook 'text-mode-hook 'text-mode-hook-setup)
+;; (defun my-save-word ()
+;;   (interactive)
+;;   (let ((current-location (point))
+;;          (word (flyspell-get-word)))
+;;     (when (consp word)
+;;       (flyspell-do-correct 'save nil (car word)
+;;       current-location (cadr word) (caddr word)
+;;       current-location))))
+;; (global-set-key (kbd "C-4") 'my-save-word)
+;; (let ((langs '("english" "pt_BR")))
+;;   (setq lang-ring (make-ring (length langs)))
+;;   (dolist (elem langs) (ring-insert lang-ring elem)))
+;; (defun cycle-ispell-languages ()
+;;   (interactive)
+;;   (let ((lang (ring-ref lang-ring -1)))
+;;     (ring-insert lang-ring lang)
+;;     (ispell-change-dictionary lang)
+;;     (flyspell-buffer)))
+;; (global-set-key (kbd "C-1") 'cycle-ispell-languages)
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Clang-format
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; clang-format can be triggered using C-c C-f
-(load "/usr/share/emacs/site-lisp/clang-format-10/clang-format.el")
+(load "/usr/share/emacs/site-lisp/clang-format-14/clang-format.el")
 (use-package clang-format
   ;; :ensure t
   :bind (("C-c C-f" . clang-format-region))
@@ -459,28 +468,35 @@ Version 2017-09-22"
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 ;; Set up code completion with company
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(use-package company
- ;; :ensure t
- :config
- ;; Zero delay when pressing tab
- (setq company-idle-delay 0)
- (add-hook 'after-init-hook 'global-company-mode)
- ;; remove unused backends
- (setq company-backends (delete 'company-eclim company-backends))
- (setq company-backends (delete 'company-xcode company-backends))
- (setq company-backends (delete 'company-bbdb company-backends))
- (setq company-backends (delete 'company-oddmuse company-backends))
-)
+;; (use-package company
+;;  ;; :ensure t
+;;  :config
+;;  ;; Zero delay when pressing tab
+;;  (setq company-idle-delay 0)
+;;  (add-hook 'after-init-hook 'global-company-mode)
+;;  ;; remove unused backends
+;;  (setq company-backends (delete 'company-eclim company-backends))
+;;  (setq company-backends (delete 'company-xcode company-backends))
+;;  (setq company-backends (delete 'company-bbdb company-backends))
+;;  (setq company-backends (delete 'company-oddmuse company-backends))
+;; )
+
 ;; Setup loading company-jedi for python completion
 ;; This requines running jedi:install-server the first time
-(use-package company-jedi
-  ;; :ensure t
-  :after python
-  :init
-  (defun company-jedi-setup ()
-    (add-to-list 'company-backends 'company-jedi))
-  (add-hook 'python-mode-hook 'company-jedi-setup)
-  )
-(setq jedi:setup-keys t)
-(setq jedi:complete-on-dot t)
-(add-hook 'python-mode-hook 'jedi:setup)
+;; (use-package company-jedi
+;;   ;; :ensure t
+;;   :after python
+;;   :init
+;;   (defun company-jedi-setup ()
+;;     (add-to-list 'company-backends 'company-jedi))
+;;   (add-hook 'python-mode-hook 'company-jedi-setup)
+;;   )
+
+(use-package lsp-pyright
+  :ensure t
+  :hook (python-mode . (lambda ()
+                          (require 'lsp-pyright)
+                          (lsp))))  ; or lsp-deferred
+;; (setq jedi:setup-keys t)
+;; (setq jedi:complete-on-dot t)
+;; (add-hook 'python-mode-hook 'jedi:setup)
